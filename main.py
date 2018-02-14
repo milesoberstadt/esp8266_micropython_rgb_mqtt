@@ -20,6 +20,7 @@ current_brightness = 1.0
 current_state = 0 # On / off
 
 def initPins():
+    print('pins initializing')
     global redPWM, greenPWM, bluePWM
     # Red
     redPIN = machine.Pin(RED)
@@ -40,13 +41,16 @@ def initPins():
     bluePWM.duty(0)
 
 def updatePins():
-    global redPWM, greenPWM, bluePWM
-    print((current_red, current_brightness, current_state))
+    global redPWM, greenPWM, bluePWM, client, current_red, current_green, current_blue
+    #print((current_red, current_brightness, current_state))
     redPWM.duty(int(current_red*current_brightness*current_state))
     greenPWM.duty(int(current_green*current_brightness*current_state))
     bluePWM.duty(int(current_blue*current_brightness*current_state))
+    client.publish(CONFIG['state_topic'], b"ON" if current_state is 1 else b"OFF")
+    client.publish(CONFIG['brightness_state_topic'], bytes([int(current_brightness*255)]))
 
 def loadConfig():
+    print('loading config')
     import ujson as json
     try:
         with open("/config.json") as f:
@@ -57,7 +61,7 @@ def loadConfig():
         CONFIG.update(config)
 
 def mqtt_sub_callback(topic, msg):
-    global current_state, current_brightness
+    global current_state, current_brightness, current_red, current_green, current_blue
     print((topic, msg))
     s_topic = topic.decode("utf-8")
     s_msg = msg.decode("utf-8")
@@ -65,19 +69,18 @@ def mqtt_sub_callback(topic, msg):
     # Depending on our topic, respond accordingly
     if (s_topic == CONFIG['command_topic']):
         # ON or OFF
-        print("ON/OFF:", s_msg, s_msg=='ON')
         if (s_msg == 'ON'):
             current_state = 1
         else:
             current_state = 0
     elif (s_topic == CONFIG['brightness_command_topic']):
-        print("Brightness:", int(s_msg)/255)
         # 0 - 255
         current_brightness = int(s_msg) / 255
     updatePins()
 
 def main():
-    global redPWM, greenPWM, bluePWM
+    print('main called')
+    global redPWM, greenPWM, bluePWM, client
     client = MQTTClient(CONFIG['client_id'], CONFIG['broker'], 0, CONFIG['mqtt_username'], CONFIG['mqtt_password'])
     client.connect()
     print("Connected to {}".format(CONFIG['broker']))
