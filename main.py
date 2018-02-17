@@ -1,4 +1,5 @@
 import machine
+import network
 import time
 import ubinascii
 import webrepl
@@ -92,6 +93,17 @@ def mqtt_sub_callback(topic, msg):
 
 def main():
     print('main called')
+    # Wait up to 30s for connection
+    start_ticks = time.ticks_ms()
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    if not wlan.isconnected():
+        while not wlan.isconnected() and (time.ticks_ms() < start_ticks + 30000):
+            pass
+
+    initPins()
+    loadConfig()
+
     global redPWM, greenPWM, bluePWM, client
     client = MQTTClient(CONFIG['client_id'], CONFIG['broker'], 0, CONFIG['mqtt_username'], CONFIG['mqtt_password'])
     client.connect()
@@ -114,7 +126,4 @@ def main():
 
 
 if __name__ == '__main__':
-    initPins()
-    loadConfig()
-    time.sleep(1)
     main()
