@@ -79,16 +79,11 @@ def mqtt_sub_callback(topic, msg):
         current_brightness = int(s_msg) / 255
     elif (s_topic == CONFIG['rgb_command_topic']):
         # 0 - 255, 3x, separated by commas, ex 255,255,0
-        #print(([int(m*(1023/255)) for m in s_msg.split(',')]))
         messages = s_msg.split(',') #[int(m*(1023/255)) for m in s_msg.split(',')]
-        for m in messages:
-            print((m))
-            print((int(int(m)*(1023/255))))
-        current_red = int(int(messages[0])*(1023/255))
-        current_green = int(int(messages[1])*(1023/255))
-        current_blue = int(int(messages[2])*(1023/255))
-        #current_red, current_green, current_blue = [int(m*(1023/255)) for m in s_msg.split(',')]
+        print([round(1023*(int(m)/255)) for m in s_msg.split(',')])
+        current_red, current_green, current_blue = [round(1023*(int(m)/255)) for m in s_msg.split(',')]
         #print((current_red, current_green, current_blue))
+        # Note to self, to go from base 1023 to 255, just do round(255*(int(m)/1023))
     updatePins()
 
 def main():
